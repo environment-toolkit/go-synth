@@ -1,0 +1,69 @@
+
+[Test_bunExecutor_Fixtures - 1]
+cdktf.out/manifest.json
+{
+  "stacks": {
+    "my-stack": {
+      "annotations": [
+      ],
+      "constructPath": "my-stack",
+      "dependencies": [
+      ],
+      "name": "my-stack",
+      "stackMetadataPath": "stacks/my-stack/metadata.json",
+      "synthesizedStackPath": "stacks/my-stack/cdk.tf.json",
+      "workingDirectory": "stacks/my-stack"
+    }
+  },
+  "version": "0.20.8"
+}
+---
+
+[Test_bunExecutor_Fixtures - 2]
+cdktf.out/stacks/my-stack/cdk.tf.json
+{
+  "//": {
+    "metadata": {
+      "backend": "http",
+      "stackName": "my-stack",
+      "version": "0.20.8"
+    },
+    "outputs": {
+    }
+  },
+  "data": {
+    "null_data_source": {
+      "my-resource_FE1AB710": {
+        "//": {
+          "metadata": {
+            "path": "my-stack/my-resource/Resource",
+            "uniqueId": "my-resource_FE1AB710"
+          }
+        },
+        "inputs": {
+          "example": "example"
+        }
+      }
+    }
+  },
+  "provider": {
+    "null": [
+      {
+      }
+    ]
+  },
+  "terraform": {
+    "backend": {
+      "http": {
+        "address": "http://localhost:1234"
+      }
+    },
+    "required_providers": {
+      "null": {
+        "source": "null",
+        "version": "3.2.2"
+      }
+    }
+  }
+}
+---

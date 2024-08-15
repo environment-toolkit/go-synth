@@ -1,0 +1,14 @@
+{
+  "name": "envtio-base",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@envtio/base": "0.0.0"
+  }
+}

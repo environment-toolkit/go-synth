@@ -1,0 +1,14 @@
+{
+  "name": "local-package",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cdktf-lib": "../fixtures/cdktf-lib/"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "go-synth",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies": {{ .DevDependencies | toPrettyJson | indent 2 }},
+  "dependencies": {{ .Dependencies | toPrettyJson | indent 2 }}
+}

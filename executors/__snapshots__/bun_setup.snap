@@ -1,0 +1,58 @@
+
+[Test_bunExecutor_Setup - 1]
+bunfig.toml
+
+---
+
+[Test_bunExecutor_Setup - 2]
+package.json
+{
+  "name": "go-synth",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies":   {},
+  "dependencies":   {
+    "cdktf": "^0.20.7"
+  }
+}
+
+---
+
+[Test_bunExecutor_Setup - 3]
+tsconfig.json
+{
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "declaration": true,
+    "experimentalDecorators": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "lib": [
+      "es2018"
+    ],
+    "module": "CommonJS",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "stripInternal": true,
+    "target": "ES2018",
+    "incremental": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "cdktf.out"
+  ]
+}
+---

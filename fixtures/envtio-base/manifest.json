@@ -1,0 +1,16 @@
+{
+  "stacks": {
+    "sample-stack": {
+      "annotations": [
+      ],
+      "constructPath": "sample-stack",
+      "dependencies": [
+      ],
+      "name": "sample-stack",
+      "stackMetadataPath": "stacks/sample-stack/metadata.json",
+      "synthesizedStackPath": "stacks/sample-stack/cdk.tf.json",
+      "workingDirectory": "stacks/sample-stack"
+    }
+  },
+  "version": "0.20.8"
+}

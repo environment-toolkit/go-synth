@@ -1,0 +1,23 @@
+{
+  "name": "cdktf-lib",
+  "version": "1.0.0",
+  "main": "dist/main.js",
+  "types": "dist/main.d.ts",
+  "license": "MPL-2.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "engines": {
+    "node": ">=18.0"
+  },
+  "dependencies": {
+    "@cdktf/provider-null": "^10.0.0",
+    "cdktf": "^0.20.8",
+    "constructs": "^10.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.3.0",
+    "typescript": "^5.5.4"
+  }
+}
