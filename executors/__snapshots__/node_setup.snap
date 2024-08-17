@@ -1,0 +1,73 @@
+
+[Test_nodeExecutor_Setup - 1]
+.npmrc
+
+---
+
+[Test_nodeExecutor_Setup - 2]
+package.json
+{
+  "name": "go-synth",
+  "devDependencies":   {
+    "@swc/core": "^1.7.6",
+    "ts-node": "^10.9.2",
+    "typescript": "5.4.5"
+  },
+  "dependencies":   {
+    "cdktf": "^0.20.7"
+  },
+  "scripts": {
+    "synth": "ts-node --swc -P ./tsconfig.json main.ts"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@9.0.2"
+}
+
+---
+
+[Test_nodeExecutor_Setup - 3]
+pnpm-workspace.yaml
+
+
+---
+
+[Test_nodeExecutor_Setup - 4]
+tsconfig.json
+{
+  "compilerOptions": {
+    "alwaysStrict": true,
+    "declaration": true,
+    "experimentalDecorators": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "lib": [
+      "es2018"
+    ],
+    "module": "CommonJS",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "stripInternal": true,
+    "target": "ES2018",
+    "incremental": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "cdktf.out"
+  ]
+}
+---

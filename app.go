@@ -13,9 +13,16 @@ import (
 // App defines the interface for managing the synthesis process.
 type App interface {
 	// Configure is a one time set up for the App environment reused by each Eval call.
+	//
+	// Configure is meant to handle Auth configuration and other setup that is shared across multiple Eval calls.
 	Configure(ctx context.Context, config config.App) error
-	// Eval runs the provided main.ts script in the App environment. Each call to Eval is independent.
-	Eval(ctx context.Context, mainTs, src, dest string, fs afero.Fs) error
+	// Eval runs the provided main.ts script in the App environment.
+	//
+	// Once the script has run, the contents of the src directory are
+	// copied to the dest directory into the provided fs.
+	//
+	// Each call to Eval is independent.
+	Eval(ctx context.Context, fs afero.Fs, mainTs, src, dest string) error
 }
 
 type app struct {
@@ -37,7 +44,7 @@ func NewApp(newFn executors.NewFn, logger *zap.Logger) App {
 
 func (a *app) Configure(ctx context.Context, config config.App) error {
 	a.config = config
-	for _, scopedPackage := range a.config.ScopedPackages {
+	for _, scopedPackage := range a.config.Scopes {
 		if !scopedPackage.RequiresAuth {
 			continue
 		}
@@ -53,7 +60,7 @@ func (a *app) Configure(ctx context.Context, config config.App) error {
 	return nil
 }
 
-func (a *app) Eval(ctx context.Context, mainTs, src, dest string, fs afero.Fs) error {
+func (a *app) Eval(ctx context.Context, fs afero.Fs, mainTs, src, dest string) error {
 	e, err := a.newExecutorFn(a.logger)
 	if err != nil {
 		return err

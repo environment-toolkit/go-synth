@@ -71,7 +71,9 @@ func Test_bunExecutor_Fixtures(t *testing.T) {
 	if mainTs, err = afero.ReadFile(fixtureFs, "local-package/main.ts"); err != nil {
 		t.Fatalf("ReadAll failed: %v", err)
 	}
-	be.Exec(ctx, string(mainTs), nil)
+	if err := be.Exec(ctx, string(mainTs), nil); err != nil {
+		t.Fatalf("Exec failed: %v", err)
+	}
 
 	snapshotFs(t, "bun_fixtures", "cdktf.out", be.fs)
 }
@@ -88,7 +90,7 @@ func snapshotFs(t *testing.T, name, root string, fs afero.Fs) error {
 		if info.IsDir() && info.Name() == "node_modules" {
 			return filepath.SkipDir
 		}
-		if info.IsDir() || info.Name() == "bun.lockb" {
+		if info.IsDir() || info.Name() == "bun.lockb" || info.Name() == "pnpm-lock.yaml" {
 			return nil
 		}
 		content, err := afero.ReadFile(fs, path)

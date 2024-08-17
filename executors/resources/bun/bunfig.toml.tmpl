@@ -1,0 +1,6 @@
+{{ if .Scopes -}}
+[install.scopes]
+{{- range $opt := .Scopes }}
+{{ $opt.Scope }} = { url = "{{ $opt.RegistryURL }}", token = "${{ $opt.AuthTokenEnvVar }}" }
+{{- end }}
+{{ end }}

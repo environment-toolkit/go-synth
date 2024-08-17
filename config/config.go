@@ -3,7 +3,8 @@ package config
 type App struct {
 	DevDependencies map[string]string      // DevDependencies
 	Dependencies    map[string]string      // Dependencies
-	ScopedPackages  []ScopedPackageOptions // Options for scoped package dependencies
+	Scopes          []ScopedPackageOptions // Options for package scopes
+	ExecutorOptions map[string]string      // Options for the executor
 }
 
 type ScopedPackageOptions struct {

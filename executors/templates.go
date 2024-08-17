@@ -16,18 +16,19 @@ import (
 )
 
 var (
-	//go:embed resources/*
+	//go:embed all:resources/*
 	embeddedFiles embed.FS
 )
 
 type templateStore struct {
 	logger    *zap.Logger
 	templates map[string]*template.Template
+	basePath  string
 }
 
-func initializeTemplates(logger *zap.Logger) *templateStore {
+func initializeTemplates(logger *zap.Logger, basePath string) *templateStore {
 	tmpls := make(map[string]*template.Template)
-	err := fs.WalkDir(embeddedFiles, "resources", func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(embeddedFiles, basePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("unable to walk embedded files: %w", err)
 		}
@@ -52,17 +53,17 @@ func initializeTemplates(logger *zap.Logger) *templateStore {
 
 	// we control the embedded templates, so we can panic here
 	if err != nil {
-		logger.Fatal("unable to walk embedded resources", zap.Error(err))
+		logger.Fatal("unable to walk embedded resources", zap.Error(err), zap.String("basePath", basePath))
 	}
 	return &templateStore{
 		logger:    logger,
 		templates: tmpls,
+		basePath:  basePath,
 	}
 }
 
 func (t *templateStore) setupFs(ctx context.Context, dest afero.Fs, config config.App) error {
-	basePath := "resources"
-	err := fs.WalkDir(embeddedFiles, basePath, func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(embeddedFiles, t.basePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("unable to setup fs: %w", err)
 		}
@@ -82,7 +83,7 @@ func (t *templateStore) setupFs(ctx context.Context, dest afero.Fs, config confi
 		}
 
 		// strip basepath from path
-		target := path[len(basePath):]
+		target := path[len(t.basePath):]
 		extension := filepath.Ext(path)
 		if extension == ".tmpl" {
 			target = removeExtension(target)
