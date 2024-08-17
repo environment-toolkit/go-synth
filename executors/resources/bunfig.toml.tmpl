@@ -1,6 +1,0 @@
-{{ if .ScopedPackages -}}
-[install.scopes]
-{{- range $scopedPkg := .ScopedPackages }}
-{{ $scopedPkg.Scope }} = { url = "{{ $scopedPkg.RegistryURL }}", token = "${{ $scopedPkg.AuthTokenEnvVar }}" }
-{{- end }}
-{{ end }}

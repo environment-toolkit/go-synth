@@ -40,19 +40,13 @@ func main() {
 		logger.Fatal("The -file flag is required.")
 	}
 
-	// Parse dependencies and devDependencies into maps
 	depsMap := parseDependencies(*dependencies)
 	devDepsMap := parseDependencies(*devDependencies)
-
-	// logger.Info(zap.String("main.ts", *mainTsPath))
-	// logger.Info(zap.String("Dependencies:", depsMap))
-	// logger.Info(zap.String("DevDependencies:", devDepsMap))
 
 	if _, err := os.Stat(*mainTsPath); os.IsNotExist(err) {
 		logger.Fatal("The specified main.ts file does not exist", zap.String("main.ts", *mainTsPath))
 	}
 
-	// read the main.ts file
 	mainTs, err := os.ReadFile(*mainTsPath)
 	if err != nil {
 		logger.Fatal("Failed to read main.ts file", zap.Error(err))
@@ -77,10 +71,10 @@ func main() {
 		DevDependencies: devDepsMap,
 	})
 	// prepare afero fs
-	dest := afero.NewOsFs()
+	destFs := afero.NewOsFs()
 
 	// Execute the main.ts script
-	app.Eval(ctx, string(mainTs), *srcDir, *outDir, dest)
+	app.Eval(ctx, destFs, string(mainTs), *srcDir, *outDir)
 }
 
 // parseDependencies parses a comma-separated list of dependencies into a map.

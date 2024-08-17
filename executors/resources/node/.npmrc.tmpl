@@ -1,0 +1,6 @@
+{{ if .Scopes -}}
+{{- range $opt := .Scopes }}
+{{ $opt.Scope }}=registry="{{ $opt.RegistryURL }}"
+//{{ $opt.RegistryURL }}:_authToken=${{ $opt.AuthTokenEnvVar }}
+{{- end }}
+{{ end }}
