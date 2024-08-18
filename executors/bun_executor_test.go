@@ -7,12 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/environment-toolkit/go-synth/config"
+	"github.com/environment-toolkit/go-synth/models"
 	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 func Test_bunExecutor_BasicExec(t *testing.T) {
@@ -41,7 +39,7 @@ func Test_bunExecutor_Setup(t *testing.T) {
 	be := getTestBunExecutor()
 	defer be.Cleanup(context.Background())
 
-	err := be.Setup(context.Background(), config.App{}, nil)
+	err := be.Setup(context.Background(), models.AppConfig{}, nil)
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
 	}
@@ -53,17 +51,20 @@ func Test_bunExecutor_Fixtures(t *testing.T) {
 	be := getTestBunExecutor()
 	defer be.Cleanup(ctx)
 	be.logger.Info(be.workingDir)
+	envVars := EnvMap(os.Environ())
 
 	fixtureFs := afero.NewBasePathFs(afero.NewOsFs(), "../fixtures")
-	if err := be.CopyFrom(ctx, "cdktf-lib", "./fixtures/cdktf-lib", fixtureFs); err != nil {
+	if err := be.CopyFrom(ctx, fixtureFs, "cdktf-lib", "./fixtures/cdktf-lib", models.CopyOptions{
+		SkipDirs: []string{"node_modules"},
+	}); err != nil {
 		t.Fatalf("CopyFrom failed: %v", err)
 	}
 
-	err := be.Setup(ctx, config.App{
+	err := be.Setup(ctx, models.AppConfig{
 		Dependencies: map[string]string{
 			"cdktf-lib": "./fixtures/cdktf-lib",
 		},
-	}, nil)
+	}, envVars)
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
 	}
@@ -71,7 +72,7 @@ func Test_bunExecutor_Fixtures(t *testing.T) {
 	if mainTs, err = afero.ReadFile(fixtureFs, "local-package/main.ts"); err != nil {
 		t.Fatalf("ReadAll failed: %v", err)
 	}
-	if err := be.Exec(ctx, string(mainTs), nil); err != nil {
+	if err := be.Exec(ctx, string(mainTs), envVars); err != nil {
 		t.Fatalf("Exec failed: %v", err)
 	}
 
@@ -108,12 +109,6 @@ func snapshotFs(t *testing.T, name, root string, fs afero.Fs) error {
 }
 
 func getTestBunExecutor() *bunExecutor {
-	// Create a custom logger configuration
-	config := zap.NewDevelopmentConfig()
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder // Optional: colorize the log level
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder        // Optional: use ISO8601 time format
-	config.Encoding = "console"
-	logger, _ := config.Build()
-	be, _ := NewBunExecutor(logger)
+	be, _ := NewBunExecutor(getPrettyLogger())
 	return be.(*bunExecutor)
 }

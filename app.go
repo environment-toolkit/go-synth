@@ -2,10 +2,11 @@ package synth
 
 import (
 	"context"
+	"os"
 
 	"github.com/environment-toolkit/go-synth/auth"
-	"github.com/environment-toolkit/go-synth/config"
 	"github.com/environment-toolkit/go-synth/executors"
+	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 )
@@ -15,7 +16,7 @@ type App interface {
 	// Configure is a one time set up for the App environment reused by each Eval call.
 	//
 	// Configure is meant to handle Auth configuration and other setup that is shared across multiple Eval calls.
-	Configure(ctx context.Context, config config.App) error
+	Configure(ctx context.Context, config models.AppConfig) error
 	// Eval runs the provided main.ts script in the App environment.
 	//
 	// Once the script has run, the contents of the src directory are
@@ -26,23 +27,28 @@ type App interface {
 }
 
 type app struct {
-	config        config.App
-	newExecutorFn executors.NewFn
+	config        models.AppConfig
+	newExecutorFn models.NewExecutorFn
 	authProvider  auth.Provider
 	envVars       map[string]string
 	logger        *zap.Logger
 }
 
-func NewApp(newFn executors.NewFn, logger *zap.Logger) App {
+func NewApp(newFn models.NewExecutorFn, logger *zap.Logger) App {
 	return &app{
 		newExecutorFn: newFn,
 		authProvider:  auth.NewAuthProvider(),
-		envVars:       make(map[string]string),
 		logger:        logger,
 	}
 }
 
-func (a *app) Configure(ctx context.Context, config config.App) error {
+func (a *app) Configure(ctx context.Context, config models.AppConfig) error {
+	envVars := config.EnvVars
+	if envVars == nil {
+		a.logger.Debug("using os env vars")
+		envVars = executors.EnvMap(os.Environ())
+	}
+	a.envVars = envVars
 	a.config = config
 	for _, scopedPackage := range a.config.Scopes {
 		if !scopedPackage.RequiresAuth {
@@ -60,19 +66,24 @@ func (a *app) Configure(ctx context.Context, config config.App) error {
 	return nil
 }
 
-func (a *app) Eval(ctx context.Context, fs afero.Fs, mainTs, src, dest string) error {
+func (a *app) Eval(ctx context.Context, dstFs afero.Fs, mainTs, src, dstPath string) error {
 	e, err := a.newExecutorFn(a.logger)
 	if err != nil {
 		return err
 	}
 	defer e.Cleanup(ctx)
+	if a.config.PreSetupFn != nil {
+		if err := a.config.PreSetupFn(e); err != nil {
+			return err
+		}
+	}
 	if err := e.Setup(ctx, a.config, a.envVars); err != nil {
 		return err
 	}
 	if err := e.Exec(ctx, mainTs, a.envVars); err != nil {
 		return err
 	}
-	if err := e.CopyTo(ctx, src, dest, fs); err != nil {
+	if err := e.CopyTo(ctx, src, dstFs, dstPath, models.CopyOptions{}); err != nil {
 		return err
 	}
 	return nil

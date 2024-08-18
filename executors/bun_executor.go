@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/environment-toolkit/go-synth/config"
+	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 )
@@ -19,7 +19,7 @@ type bunExecutor struct {
 }
 
 // NewBunExecutor creates a new instance of BunExecutor.
-func NewBunExecutor(logger *zap.Logger) (Executor, error) {
+func NewBunExecutor(logger *zap.Logger) (models.Executor, error) {
 	fs, workingDir, e := newTempFs("go-synth-bun")
 	if e != nil {
 		return nil, fmt.Errorf("error creating Bun Exector temp fs: %w", e)
@@ -32,16 +32,13 @@ func NewBunExecutor(logger *zap.Logger) (Executor, error) {
 	}, nil
 }
 
-func (be *bunExecutor) Setup(ctx context.Context, conf config.App, envVars map[string]string) error {
-	merged := config.App{
+func (be *bunExecutor) Setup(ctx context.Context, conf models.AppConfig, envVars map[string]string) error {
+	merged := models.AppConfig{
 		Dependencies: map[string]string{
 			"cdktf": "^0.20.7",
 		},
-		DevDependencies: map[string]string{
-			// "@types/bun": "^1.1.3",
-			// "typescript": "5.4.5",
-		},
-		Scopes: []config.ScopedPackageOptions{},
+		DevDependencies: map[string]string{},
+		Scopes:          []models.ScopedPackageOptions{},
 	}
 	maps.Copy(merged.Dependencies, conf.Dependencies)
 	maps.Copy(merged.DevDependencies, conf.DevDependencies)
@@ -78,12 +75,12 @@ func (be *bunExecutor) Exec(ctx context.Context, mainTS string, envVars map[stri
 	return nil
 }
 
-func (be *bunExecutor) CopyTo(ctx context.Context, srcDir, destDir string, dest afero.Fs) error {
-	return copyDir(be.logger, srcDir, destDir, be.fs, dest)
+func (be *bunExecutor) CopyTo(ctx context.Context, srcDir string, dstFs afero.Fs, dstDir string, opts models.CopyOptions) error {
+	return copyDir(be.logger, srcDir, dstDir, be.fs, dstFs, opts)
 }
 
-func (be *bunExecutor) CopyFrom(ctx context.Context, srcDir, destDir string, src afero.Fs) error {
-	return copyDir(be.logger, srcDir, destDir, src, be.fs)
+func (be *bunExecutor) CopyFrom(ctx context.Context, srcFs afero.Fs, srcDir, dstDir string, opts models.CopyOptions) error {
+	return copyDir(be.logger, srcDir, dstDir, srcFs, be.fs, opts)
 }
 
 func (be *bunExecutor) Cleanup(ctx context.Context) error {

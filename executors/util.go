@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -21,18 +22,8 @@ func removeExtension(path string) string {
 	return strings.TrimSuffix(path, filepath.Ext(path))
 }
 
-// ensurePath creates the directory structure for the provided path.
-func ensurePath(dest afero.Fs, path string) error {
-	dir, _ := filepath.Split(path)
-	ospath := filepath.FromSlash(dir)
-	err := dest.MkdirAll(ospath, 0775)
-	if err != nil {
-		return fmt.Errorf("couldn't create %s directory, %w", dir, err)
-	}
-	return nil
-}
-
-func copyDir(logger *zap.Logger, srcDir, destDir string, src, dest afero.Fs) error {
+// copyDir copies a directory from the source filesystem to the destination filesystem.
+func copyDir(logger *zap.Logger, srcDir, destDir string, src, dest afero.Fs, options models.CopyOptions) error {
 	srcDirInfo, err := src.Stat(srcDir)
 	if err != nil {
 		return err
@@ -41,32 +32,67 @@ func copyDir(logger *zap.Logger, srcDir, destDir string, src, dest afero.Fs) err
 		return fmt.Errorf("source path is not a directory: %s", srcDir)
 	}
 
-	afero.Walk(src, srcDir, func(path string, info os.FileInfo, err error) error {
+	err = afero.Walk(src, srcDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
-		}
-		// Skip node_modules
-		if info.IsDir() && info.Name() == "node_modules" {
-			return filepath.SkipDir
 		}
 		relPath, err := filepath.Rel(srcDir, path)
 		if err != nil {
 			return err
 		}
-		destPath := filepath.Join(destDir, relPath)
 		if info.IsDir() {
-			if err := dest.MkdirAll(destPath, 0755); err != nil {
-				return err
+			for _, skipDir := range options.SkipDirs {
+				if relPath == skipDir {
+					logger.Debug("skipping directory", zap.String("path", relPath))
+					return filepath.SkipDir
+				}
 			}
 			return nil
 		}
-		logger.Info("copying file", zap.String("src", path), zap.String("dest", destPath))
+		shouldIgnore, err := shouldIgnore(relPath, options.AllowPatterns, options.IgnorePatterns)
+		if err != nil {
+			return err
+		}
+		if shouldIgnore {
+			logger.Debug("ignoring file", zap.String("path", path))
+			return nil
+		}
+		destPath := filepath.Join(destDir, relPath)
+		logger.Debug("copying file", zap.String("src", path), zap.String("dest", destPath))
 		if err := copyFile(src, dest, path, destPath); err != nil {
 			return err
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+// shouldIgnore checks if the provided path should be ignored based on the allow and ignore patterns.
+func shouldIgnore(path string, allowPatterns []string, ignorePatterns []string) (bool, error) {
+	for _, pattern := range allowPatterns {
+		match, err := filepath.Match(pattern, path)
+		if err != nil {
+			return false, err
+		}
+		if match {
+			return false, nil
+		}
+	}
+
+	for _, pattern := range ignorePatterns {
+		match, err := filepath.Match(pattern, path)
+		if err != nil {
+			return false, err
+		}
+		if match {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // copyFile copies a file from the source filesystem to the destination filesystem.
@@ -77,6 +103,9 @@ func copyFile(src, dest afero.Fs, srcPath, destPath string) error {
 	}
 	defer srcFile.Close()
 
+	if err := ensurePath(dest, destPath); err != nil {
+		return err
+	}
 	destFile, err := dest.Create(destPath)
 	if err != nil {
 		return err
@@ -85,6 +114,17 @@ func copyFile(src, dest afero.Fs, srcPath, destPath string) error {
 
 	if _, err := io.Copy(destFile, srcFile); err != nil {
 		return err
+	}
+	return nil
+}
+
+// ensurePath creates the directory structure for the provided path.
+func ensurePath(dest afero.Fs, path string) error {
+	dir, _ := filepath.Split(path)
+	ospath := filepath.FromSlash(dir)
+	err := dest.MkdirAll(ospath, 0775)
+	if err != nil {
+		return fmt.Errorf("couldn't create %s directory, %w", dir, err)
 	}
 	return nil
 }
@@ -108,11 +148,6 @@ type runCommandOptions struct {
 
 // runCommand runs the specified entrypoint with the provided environment variables.
 func runCommand(ctx context.Context, options *runCommandOptions, args ...string) error {
-	envVars := options.envVars
-	if envVars == nil {
-		envVars = envMap(os.Environ())
-	}
-
 	// check for early cancellation
 	select {
 	case <-ctx.Done():
@@ -122,7 +157,7 @@ func runCommand(ctx context.Context, options *runCommandOptions, args ...string)
 
 	cmd := exec.CommandContext(ctx, options.entrypoint, args...)
 	cmd.Dir = options.workingDir
-	cmd.Env = formatEnvVars(envVars)
+	cmd.Env = formatEnvVars(options.envVars)
 
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -149,10 +184,10 @@ func runCommand(ctx context.Context, options *runCommandOptions, args ...string)
 	wg.Wait()
 
 	if err := cmd.Wait(); err != nil {
-		// dump env for debug
-		for k, v := range envVars {
-			options.logger.Debug("environment", zap.String(k, v))
-		}
+		// // dump env for debug
+		// for k, v := range envVars {
+		// 	options.logger.Debug("environment", zap.String(k, v))
+		// }
 		return fmt.Errorf("error running %s %s: %w", options.entrypoint, args, err)
 	}
 
@@ -180,8 +215,8 @@ func formatEnvVars(envVars map[string]string) []string {
 	return formatted
 }
 
-// envMap converts os.environ output to a map.
-func envMap(environ []string) map[string]string {
+// EnvMap converts os.environ output to a map.
+func EnvMap(environ []string) map[string]string {
 	env := map[string]string{}
 	for _, ev := range environ {
 		parts := strings.SplitN(ev, "=", 2)

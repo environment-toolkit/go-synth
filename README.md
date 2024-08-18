@@ -9,21 +9,21 @@ Given a CDKTF App "entry" script, return synthesized output.
 > [!WARNING]
 > Bun binary is expected on `PATH`
 
-<!-- todo: check if bun is on PATH? -->
+<!-- TODO: check if bun is on PATH? -->
 
 Example usage (see [cmd/main.go](./cmd/main.go))
 
 ```golang
 logger := zap.NewProduction()
 app := synth.NewApp(executors.NewBunExecutor, logger)
-app.Configure(ctx, config.App{
+app.Configure(ctx, models.AppConfig{
     Dependencies: map[string]string{
       "my-cdktf-pkg": "0.0.1",
     },
-    ScopedPackages: []config.ScopedPackageOptions{},
+    ScopedPackages: []models.ScopedPackageOptions{},
 })
 // prepare afero fs to receive the result
-destFs := afero.NewOsFs()
+dstFs := afero.NewOsFs()
 
 mainTs := `import { App } from "cdktf";
 import { MyStack, MyResource } from "my-cdktf-pkg";
@@ -40,7 +40,9 @@ new MyResource(stack, "my-resource");
 app.synth();`
 
 // Execute the main.ts script and copy the synthesized stack out
-app.Eval(ctx, destFs, mainTs, "cdktf.out/stacks/my-stack", ".")
+if err = app.Eval(ctx, dstFs, string(mainTs), *srcDir, *outDir); err != nil {
+  logger.Fatal("Failed to execute main.ts script", zap.Error(err))
+}
 ```
 
 ## NodeExecutor
@@ -52,8 +54,8 @@ Example usage (see [executors/node_executor_test.go](./executors/node_executor_t
 
 ```golang
 logger := zap.NewProduction()
-app := synth.NewApp(executors.NewBunExecutor, logger)
-app.Configure(ctx, config.App{
+app := synth.NewApp(executors.NewNodeExecutor, logger)
+app.Configure(ctx, models.AppConfig{
     Dependencies: map[string]string{
       "my-cdktf-pkg": "0.0.1",
     },
@@ -85,7 +87,9 @@ new MyResource(stack, "my-resource");
 app.synth();`
 
 // Execute the main.ts script and copy the synthesized stack out
-app.Eval(ctx, destFs, "cdktf.out/stacks/my-stack", ".")
+if err = app.Eval(ctx, dstFs, string(mainTs), *srcDir, *outDir); err != nil {
+  logger.Fatal("Failed to execute main.ts script", zap.Error(err))
+}
 ```
 
 ## FAQ
@@ -106,7 +110,7 @@ Feel free to open a ticket until CI/CD has been configured.
 
 - [x] Add Bun Executor
 - [x] Add Node+Pnpm Executor
-- [ ] Add LICENSE
+- [x] Add LICENSE
 - [ ] Add CI/CD and Release process
 - [ ] Add golang executor (use JSII cross compiled CDKTF Golang constructs with `go run`)
 - [ ] Add go-typescript executor ([goja/#519(comment)](https://github.com/dop251/goja/issues/519#issuecomment-1592935649) / [go-typescript/pull/13](https://github.com/clarkmcc/go-typescript/pull/13))
