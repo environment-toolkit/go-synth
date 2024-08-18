@@ -1,10 +1,12 @@
-package config
+package models
 
-type App struct {
+type AppConfig struct {
 	DevDependencies map[string]string      // DevDependencies
 	Dependencies    map[string]string      // Dependencies
 	Scopes          []ScopedPackageOptions // Options for package scopes
 	ExecutorOptions map[string]string      // Options for the executor
+	PreSetupFn      func(e Executor) error // Function to run before setup
+	EnvVars         map[string]string      // Environment variables to set
 }
 
 type ScopedPackageOptions struct {

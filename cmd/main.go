@@ -13,7 +13,7 @@ import (
 	"github.com/environment-toolkit/go-synth/executors"
 	"github.com/spf13/afero"
 
-	"github.com/environment-toolkit/go-synth/config"
+	"github.com/environment-toolkit/go-synth/models"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -66,15 +66,17 @@ func main() {
 	}()
 
 	app := synth.NewApp(executors.NewBunExecutor, logger)
-	app.Configure(ctx, config.App{
+	app.Configure(ctx, models.AppConfig{
 		Dependencies:    depsMap,
 		DevDependencies: devDepsMap,
 	})
 	// prepare afero fs
-	destFs := afero.NewOsFs()
+	dstFs := afero.NewOsFs()
 
 	// Execute the main.ts script
-	app.Eval(ctx, destFs, string(mainTs), *srcDir, *outDir)
+	if err = app.Eval(ctx, dstFs, string(mainTs), *srcDir, *outDir); err != nil {
+		logger.Fatal("Failed to execute main.ts script", zap.Error(err))
+	}
 }
 
 // parseDependencies parses a comma-separated list of dependencies into a map.

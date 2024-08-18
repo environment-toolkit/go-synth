@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/environment-toolkit/go-synth/config"
+	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 )
@@ -20,7 +20,7 @@ type nodeExecutor struct {
 }
 
 // NewNodeExecutor creates a new instance of nodeExecutor.
-func NewNodeExecutor(logger *zap.Logger) (Executor, error) {
+func NewNodeExecutor(logger *zap.Logger) (models.Executor, error) {
 	fs, workingDir, e := newTempFs("go-synth-node")
 	if e != nil {
 		return nil, fmt.Errorf("error creating Node Exector temp fs: %w", e)
@@ -33,8 +33,8 @@ func NewNodeExecutor(logger *zap.Logger) (Executor, error) {
 	}, nil
 }
 
-func (be *nodeExecutor) Setup(ctx context.Context, conf config.App, envVars map[string]string) error {
-	merged := config.App{
+func (be *nodeExecutor) Setup(ctx context.Context, conf models.AppConfig, envVars map[string]string) error {
+	merged := models.AppConfig{
 		Dependencies: map[string]string{
 			"cdktf": "^0.20.7",
 		},
@@ -49,7 +49,7 @@ func (be *nodeExecutor) Setup(ctx context.Context, conf config.App, envVars map[
 			"entrypoint":     "pnpm",
 			"synthScript":    "ts-node --swc -P ./tsconfig.json main.ts",
 		},
-		Scopes: []config.ScopedPackageOptions{},
+		Scopes: []models.ScopedPackageOptions{},
 	}
 	maps.Copy(merged.Dependencies, conf.Dependencies)
 	maps.Copy(merged.DevDependencies, conf.DevDependencies)
@@ -89,12 +89,12 @@ func (be *nodeExecutor) Exec(ctx context.Context, mainTS string, envVars map[str
 	return nil
 }
 
-func (be *nodeExecutor) CopyTo(ctx context.Context, srcDir, destDir string, dest afero.Fs) error {
-	return copyDir(be.logger, srcDir, destDir, be.fs, dest)
+func (be *nodeExecutor) CopyTo(ctx context.Context, srcDir string, dstFs afero.Fs, dstDir string, opts models.CopyOptions) error {
+	return copyDir(be.logger, srcDir, dstDir, be.fs, dstFs, opts)
 }
 
-func (be *nodeExecutor) CopyFrom(ctx context.Context, srcDir, destDir string, src afero.Fs) error {
-	return copyDir(be.logger, srcDir, destDir, src, be.fs)
+func (be *nodeExecutor) CopyFrom(ctx context.Context, srcFs afero.Fs, srcDir, dstDir string, opts models.CopyOptions) error {
+	return copyDir(be.logger, srcDir, dstDir, srcFs, be.fs, opts)
 }
 
 func (be *nodeExecutor) Cleanup(ctx context.Context) error {

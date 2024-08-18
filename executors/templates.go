@@ -10,7 +10,7 @@ import (
 
 	"text/template"
 
-	"github.com/environment-toolkit/go-synth/config"
+	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 )
@@ -62,7 +62,7 @@ func initializeTemplates(logger *zap.Logger, basePath string) *templateStore {
 	}
 }
 
-func (t *templateStore) setupFs(ctx context.Context, dest afero.Fs, config config.App) error {
+func (t *templateStore) setupFs(ctx context.Context, dest afero.Fs, config models.AppConfig) error {
 	err := fs.WalkDir(embeddedFiles, t.basePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("unable to setup fs: %w", err)
@@ -77,9 +77,6 @@ func (t *templateStore) setupFs(ctx context.Context, dest afero.Fs, config confi
 
 		if d.IsDir() {
 			return nil // skip dirs
-		}
-		if err := ensurePath(dest, path); err != nil {
-			return err
 		}
 
 		// strip basepath from path

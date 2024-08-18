@@ -2,19 +2,18 @@ package executors
 
 import (
 	"context"
+	"os"
 	"testing"
 
-	"github.com/environment-toolkit/go-synth/config"
+	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 func Test_nodeExecutor_Setup(t *testing.T) {
 	be := getTestNodeExecutor()
 	defer be.Cleanup(context.Background())
 
-	err := be.Setup(context.Background(), config.App{}, nil)
+	err := be.Setup(context.Background(), models.AppConfig{}, nil)
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
 	}
@@ -27,12 +26,16 @@ func Test_nodeExecutor_Fixtures(t *testing.T) {
 	defer be.Cleanup(ctx)
 	be.logger.Info(be.workingDir)
 
+	envVars := EnvMap(os.Environ())
+
 	fixtureFs := afero.NewBasePathFs(afero.NewOsFs(), "../fixtures")
 	// copy in local package
-	if err := be.CopyFrom(ctx, "cdktf-lib", "./fixtures/cdktf-lib", fixtureFs); err != nil {
+	if err := be.CopyFrom(ctx, fixtureFs, "cdktf-lib", "./fixtures/cdktf-lib", models.CopyOptions{
+		SkipDirs: []string{"node_modules"},
+	}); err != nil {
 		t.Fatalf("CopyFrom failed: %v", err)
 	}
-	err := be.Setup(ctx, config.App{
+	err := be.Setup(ctx, models.AppConfig{
 		Dependencies: map[string]string{
 			"cdktf-lib": "./fixtures/cdktf-lib",
 		},
@@ -40,7 +43,7 @@ func Test_nodeExecutor_Fixtures(t *testing.T) {
 			// required for pnpm to install cdktf-lib dependencies ...
 			"pnpmWorkspace": "packages:\n- \"./fixtures/cdktf-lib\"",
 		},
-	}, nil)
+	}, envVars)
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
 	}
@@ -48,7 +51,7 @@ func Test_nodeExecutor_Fixtures(t *testing.T) {
 	if mainTs, err = afero.ReadFile(fixtureFs, "local-package/main.ts"); err != nil {
 		t.Fatalf("ReadAll failed: %v", err)
 	}
-	if err := be.Exec(ctx, string(mainTs), nil); err != nil {
+	if err := be.Exec(ctx, string(mainTs), envVars); err != nil {
 		t.Fatalf("Exec failed: %v", err)
 	}
 
@@ -56,12 +59,6 @@ func Test_nodeExecutor_Fixtures(t *testing.T) {
 }
 
 func getTestNodeExecutor() *nodeExecutor {
-	// Create a custom logger configuration
-	config := zap.NewDevelopmentConfig()
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder // Optional: colorize the log level
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder        // Optional: use ISO8601 time format
-	config.Encoding = "console"
-	logger, _ := config.Build()
-	be, _ := NewNodeExecutor(logger)
+	be, _ := NewNodeExecutor(getPrettyLogger())
 	return be.(*nodeExecutor)
 }
