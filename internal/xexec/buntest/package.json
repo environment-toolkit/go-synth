@@ -1,0 +1,13 @@
+{
+  "name": "go-synth",
+  "module": "main.ts",
+  "type": "module",
+  "devDependencies": {
+    "@swc/core": "^1.7.6",
+    "ts-node": "^10.9.2",
+    "typescript": "5.4.5"
+  },
+  "dependencies": {
+    "cdktf": "^0.20.7"
+  }
+}
