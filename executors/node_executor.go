@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/environment-toolkit/go-synth/internal/xexec"
 	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
@@ -60,14 +61,22 @@ func (be *nodeExecutor) Setup(ctx context.Context, conf models.AppConfig, envVar
 		return err
 	}
 
-	options := &runCommandOptions{
-		workingDir: be.workingDir,
-		entrypoint: be.entrypoint,
-		envVars:    envVars,
-		logger:     be.logger,
+	options := &xexec.Options{
+		WorkingDir:           be.workingDir,
+		EntryPoint:           be.entrypoint,
+		Args:                 []string{"install"},
+		EnvironmentVariables: envVars,
 	}
-	if err := runCommand(ctx, options, "install"); err != nil {
-		return fmt.Errorf("error running %s install: %w", be.entrypoint, err)
+	stdoutCh := make(chan string)
+	stderrCh := make(chan string)
+	defer func() {
+		close(stdoutCh)
+		close(stderrCh)
+	}()
+
+	cmd := xexec.NewCommand(options, stdoutCh, stderrCh)
+	if err := cmd.Run(ctx); err != nil {
+		return fmt.Errorf("error running bun install: %w", err)
 	}
 	return nil
 }
@@ -77,14 +86,23 @@ func (be *nodeExecutor) Exec(ctx context.Context, mainTS string, envVars map[str
 	if err := afero.WriteFile(be.fs, "main.ts", []byte(mainTS), 0775); err != nil {
 		return err
 	}
-	options := &runCommandOptions{
-		workingDir: be.workingDir,
-		entrypoint: be.entrypoint,
-		envVars:    envVars,
-		logger:     be.logger,
+
+	options := &xexec.Options{
+		WorkingDir:           be.workingDir,
+		EntryPoint:           be.entrypoint,
+		Args:                 []string{"run", "synth"},
+		EnvironmentVariables: envVars,
 	}
-	if err := runCommand(ctx, options, "run", "synth"); err != nil {
-		return fmt.Errorf("error running synthScript: %w", err)
+	stdoutCh := make(chan string)
+	stderrCh := make(chan string)
+	defer func() {
+		close(stdoutCh)
+		close(stderrCh)
+	}()
+
+	cmd := xexec.NewCommand(options, stdoutCh, stderrCh)
+	if err := cmd.Run(ctx); err != nil {
+		return fmt.Errorf("error running bun install: %w", err)
 	}
 	return nil
 }

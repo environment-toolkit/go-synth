@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/environment-toolkit/go-synth/internal/xexec"
 	"github.com/environment-toolkit/go-synth/models"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
@@ -46,13 +47,21 @@ func (be *bunExecutor) Setup(ctx context.Context, conf models.AppConfig, envVars
 	if err := be.templates.setupFs(ctx, be.fs, merged); err != nil {
 		return err
 	}
-	options := &runCommandOptions{
-		workingDir: be.workingDir,
-		entrypoint: "bun",
-		envVars:    envVars,
-		logger:     be.logger,
+	options := &xexec.Options{
+		WorkingDir:           be.workingDir,
+		EntryPoint:           "bun",
+		Args:                 []string{"install"},
+		EnvironmentVariables: envVars,
 	}
-	if err := runCommand(ctx, options, "install"); err != nil {
+	stdoutCh := make(chan string)
+	stderrCh := make(chan string)
+	defer func() {
+		close(stdoutCh)
+		close(stderrCh)
+	}()
+
+	cmd := xexec.NewCommand(options, stdoutCh, stderrCh)
+	if err := cmd.Run(ctx); err != nil {
 		return fmt.Errorf("error running bun install: %w", err)
 	}
 	return nil
@@ -63,13 +72,21 @@ func (be *bunExecutor) Exec(ctx context.Context, mainTS string, envVars map[stri
 	if err := afero.WriteFile(be.fs, "main.ts", []byte(mainTS), 0775); err != nil {
 		return err
 	}
-	options := &runCommandOptions{
-		workingDir: be.workingDir,
-		entrypoint: "bun",
-		envVars:    envVars,
-		logger:     be.logger,
+	options := &xexec.Options{
+		WorkingDir:           be.workingDir,
+		EntryPoint:           "bun",
+		Args:                 []string{"run", "main.ts"},
+		EnvironmentVariables: envVars,
 	}
-	if err := runCommand(ctx, options, "run", "main.ts"); err != nil {
+	stdoutCh := make(chan string)
+	stderrCh := make(chan string)
+	defer func() {
+		close(stdoutCh)
+		close(stderrCh)
+	}()
+
+	cmd := xexec.NewCommand(options, stdoutCh, stderrCh)
+	if err := cmd.Run(ctx); err != nil {
 		return fmt.Errorf("error running bun install: %w", err)
 	}
 	return nil
