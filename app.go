@@ -32,6 +32,7 @@ type app struct {
 	authProvider  auth.Provider
 	envVars       map[string]string
 	logger        *zap.Logger
+	keepFs        bool // keepFs is used to keep the fs after the app is done, useful for debugging.
 }
 
 func NewApp(newFn models.NewExecutorFn, logger *zap.Logger) App {
@@ -39,6 +40,16 @@ func NewApp(newFn models.NewExecutorFn, logger *zap.Logger) App {
 		newExecutorFn: newFn,
 		authProvider:  auth.NewAuthProvider(),
 		logger:        logger,
+		keepFs:        false, // set to true for debugging purposes
+	}
+}
+
+func NewAppWithDebug(newFn models.NewExecutorFn, logger *zap.Logger) App {
+	return &app{
+		newExecutorFn: newFn,
+		authProvider:  auth.NewAuthProvider(),
+		logger:        logger,
+		keepFs:        true, // keep the fs for debugging purposes
 	}
 }
 
@@ -71,7 +82,12 @@ func (a *app) Eval(ctx context.Context, dstFs afero.Fs, mainTs, src, dstPath str
 	if err != nil {
 		return err
 	}
-	defer e.Cleanup(ctx)
+	if !a.keepFs {
+		defer e.Cleanup(ctx)
+	} else {
+		a.logger.Debug("Debug fs is enabled, not cleaning up after execution", zap.String("workingDir", e.GetWorkingDir()))
+	}
+
 	if a.config.PreSetupFn != nil {
 		if err := a.config.PreSetupFn(e); err != nil {
 			return err

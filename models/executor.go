@@ -24,8 +24,14 @@ type Executor interface {
 	// CopyFrom copies the source path to the executor workingDir from the provided filesystem.
 	CopyFrom(ctx context.Context, srcFS afero.Fs, srcDir, dstDir string, options CopyOptions) error
 
+	// CopyFileFrom copies the source file to the executor workingDir from the provided filesystem, making sure the destination Path exists.
+	CopyFileFrom(ctx context.Context, srcFS afero.Fs, srcPath, dstPath string) error
+
 	// Cleanup cleans up the environment.
 	Cleanup(ctx context.Context) error
+
+	// GetWorkingDir returns the working directory of the executor.
+	GetWorkingDir() string
 }
 
 type CopyOptions struct {
