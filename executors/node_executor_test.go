@@ -13,7 +13,8 @@ func Test_nodeExecutor_Setup(t *testing.T) {
 	be := getTestNodeExecutor()
 	defer be.Cleanup(context.Background())
 
-	err := be.Setup(context.Background(), models.AppConfig{}, nil)
+	envVars := EnvMap(os.Environ())
+	err := be.Setup(context.Background(), models.AppConfig{}, envVars)
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
 	}
@@ -35,6 +36,12 @@ func Test_nodeExecutor_Fixtures(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("CopyFrom failed: %v", err)
 	}
+
+	// copy in local file
+	if err := be.CopyFileFrom(ctx, fixtureFs, "testfile", "testfile"); err != nil {
+		t.Fatalf("CopyFileFrom failed: %v", err)
+	}
+
 	err := be.Setup(ctx, models.AppConfig{
 		Dependencies: map[string]string{
 			"cdktf-lib": "./fixtures/cdktf-lib",
@@ -55,6 +62,14 @@ func Test_nodeExecutor_Fixtures(t *testing.T) {
 		t.Fatalf("Exec failed: %v", err)
 	}
 
+	// assert the testfile exists in  the be.fs
+	exists, err := afero.Exists(be.fs, "testfile")
+	if err != nil {
+		t.Fatalf("Failed to check if testfile exists: %v", err)
+	}
+	if !exists {
+		t.Errorf("testfile was not created")
+	}
 	snapshotFs(t, "node_fixtures", "cdktf.out", be.fs)
 }
 

@@ -15,7 +15,7 @@ cdktf.out/manifest.json
       "workingDirectory": "stacks/my-stack"
     }
   },
-  "version": "0.20.8"
+  "version": "0.20.12"
 }
 ---
 
@@ -26,7 +26,7 @@ cdktf.out/stacks/my-stack/cdk.tf.json
     "metadata": {
       "backend": "http",
       "stackName": "my-stack",
-      "version": "0.20.8"
+      "version": "0.20.12"
     },
     "outputs": {
     }
@@ -61,7 +61,7 @@ cdktf.out/stacks/my-stack/cdk.tf.json
     "required_providers": {
       "null": {
         "source": "null",
-        "version": "3.2.2"
+        "version": "3.2.4"
       }
     }
   }

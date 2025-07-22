@@ -21,7 +21,8 @@ func Test_bunExecutor_BasicExec(t *testing.T) {
 	const testFile = "file.txt"
 	mainTS := fmt.Sprintf(`await Bun.write(%q, "Lorem ipsum");`, testFile)
 
-	err := be.Exec(context.Background(), mainTS, nil)
+	envVars := EnvMap(os.Environ())
+	err := be.Exec(context.Background(), mainTS, envVars)
 	if err != nil {
 		t.Fatalf("Exec failed: %v", err)
 	}
@@ -39,7 +40,8 @@ func Test_bunExecutor_Setup(t *testing.T) {
 	be := getTestBunExecutor()
 	defer be.Cleanup(context.Background())
 
-	err := be.Setup(context.Background(), models.AppConfig{}, nil)
+	envVars := EnvMap(os.Environ())
+	err := be.Setup(context.Background(), models.AppConfig{}, envVars)
 	if err != nil {
 		t.Fatalf("Setup failed: %v", err)
 	}
@@ -60,6 +62,11 @@ func Test_bunExecutor_Fixtures(t *testing.T) {
 		t.Fatalf("CopyFrom failed: %v", err)
 	}
 
+	// copy in local file
+	if err := be.CopyFileFrom(ctx, fixtureFs, "testfile", "testfile"); err != nil {
+		t.Fatalf("CopyFileFrom failed: %v", err)
+	}
+
 	err := be.Setup(ctx, models.AppConfig{
 		Dependencies: map[string]string{
 			"cdktf-lib": "./fixtures/cdktf-lib",
@@ -74,6 +81,15 @@ func Test_bunExecutor_Fixtures(t *testing.T) {
 	}
 	if err := be.Exec(ctx, string(mainTs), envVars); err != nil {
 		t.Fatalf("Exec failed: %v", err)
+	}
+
+	// assert the testfile exists in  the be.fs
+	exists, err := afero.Exists(be.fs, "testfile")
+	if err != nil {
+		t.Fatalf("Failed to check if testfile exists: %v", err)
+	}
+	if !exists {
+		t.Errorf("testfile was not created")
 	}
 
 	snapshotFs(t, "bun_fixtures", "cdktf.out", be.fs)

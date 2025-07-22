@@ -8,3 +8,8 @@ synth/bun:
 	mv bin/bun-linux-x64/bun bin/
 	memexec-gen -dest synth/bun bin/bun
 	rm -rf bin
+.PHONY: synth/bun
+
+test:
+	UPDATE_SNAPS=true go test ./...
+.PHONY: test

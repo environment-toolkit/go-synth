@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"os"
 
 	"github.com/spf13/afero"
 	"github.com/terraconstructs/go-synth/models"
@@ -97,9 +98,19 @@ func (be *nodeExecutor) CopyFrom(ctx context.Context, srcFs afero.Fs, srcDir, ds
 	return copyDir(be.logger, srcDir, dstDir, srcFs, be.fs, opts)
 }
 
+func (be *nodeExecutor) CopyFileFrom(ctx context.Context, srcFs afero.Fs, srcPath, dstPath string) error {
+	be.logger.Debug("copying file", zap.String("src", srcPath), zap.String("dest", dstPath))
+	return copyFile(srcFs, be.fs, srcPath, dstPath)
+}
+
+func (be *nodeExecutor) GetWorkingDir() string {
+	return be.workingDir
+}
+
 func (be *nodeExecutor) Cleanup(ctx context.Context) error {
-	be.logger.Debug("Cleaning up Node Executor")
-	if err := be.fs.RemoveAll(be.workingDir); err != nil {
+	be.logger.Debug("Cleaning up Node Executor", zap.String("workingDir", be.workingDir))
+	if err := os.RemoveAll(be.workingDir); err != nil {
+		be.logger.Error("Failed to clean up Node Executor", zap.Error(err))
 		return err
 	}
 	return nil
