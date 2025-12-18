@@ -1,5 +1,5 @@
 import { App, HttpBackend } from "cdktf";
-import { aws } from "@envtio/base";
+import { aws } from "@terraconstructs/base";
 
 const outdir = "cdktf.out";
 const app = new App({

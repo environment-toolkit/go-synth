@@ -3,9 +3,9 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "envtio-base",
+      "name": "terraconstructs-base",
       "dependencies": {
-        "@envtio/base": "0.0.0",
+        "@terraconstructs/base": "0.1.0",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -18,7 +18,7 @@
   "packages": {
     "@cdktf/provider-aws": ["@cdktf/provider-aws@19.30.0", "", { "peerDependencies": { "cdktf": "^0.20.0", "constructs": "^10.3.0" } }, "sha512-lFQqmUl0AHqGFzFwoJBBjmz7QHRBHjqMbvQ7eOb8osP1YNA/fLaMwoGsOII0/kdzbKwAVv++attkB+LGPb/Efw=="],
 
-    "@envtio/base": ["@envtio/base@0.0.0", "", { "peerDependencies": { "@cdktf/provider-aws": "^19.28.0", "cdktf": "^0.20.8", "constructs": "^10.3.0" } }, "sha512-Gv+jK427DIOVsLyYCSOCaIetzSmHQnRLcIHQ5xm5ZVBBoWn0pe9Gu0LD6ffG9btEH/NfK6sJ2Tme8P9HSUllZg=="],
+    "@terraconstructs/base": ["@terraconstructs/base@0.1.0", "", { "peerDependencies": { "@cdktf/provider-aws": "^19.28.0", "cdktf": "^0.20.8", "constructs": "^10.3.0" } }, "sha512-Gv+jK427DIOVsLyYCSOCaIetzSmHQnRLcIHQ5xm5ZVBBoWn0pe9Gu0LD6ffG9btEH/NfK6sJ2Tme8P9HSUllZg=="],
 
     "@types/bun": ["@types/bun@1.1.6", "", { "dependencies": { "bun-types": "1.1.17" } }, "sha512-uJgKjTdX0GkWEHZzQzFsJkWp5+43ZS7HC8sZPFnOwnSo1AsNl2q9o2bFeS23disNDqbggEgyFkKCHl/w8iZsMA=="],
 
