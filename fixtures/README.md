@@ -6,10 +6,10 @@ Sample configurations to test `go-synth` against.
 
 Sample `main.ts` referencing a local library (used in executor tests)
 
-## Envtio/Base
+## TerraConstructs/Base
 
-Sample `main.ts` creating an AWS Network with [@envtio/base](https://www.npmjs.com/package/@envtio/base)
+Sample `main.ts` creating an AWS Network with [@terraconstructs/base](https://www.npmjs.com/package/@terraconstructs/base)
 
 ```console
-synth -file main.ts -deps "@envtio/base:0.0.0" -src "cdktf.out/stacks/sample-stack"
+synth -file main.ts -deps "@terraconstructs/base:0.1.0" -src "cdktf.out/stacks/sample-stack"
 ```

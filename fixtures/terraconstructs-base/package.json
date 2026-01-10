@@ -1,5 +1,5 @@
 {
-  "name": "envtio-base",
+  "name": "terraconstructs-base",
   "module": "main.ts",
   "type": "module",
   "devDependencies": {
@@ -9,6 +9,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@envtio/base": "0.0.0"
+    "@terraconstructs/base": "0.1.0"
   }
 }

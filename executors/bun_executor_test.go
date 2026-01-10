@@ -107,7 +107,7 @@ func snapshotFs(t *testing.T, name, root string, fs afero.Fs) error {
 		if info.IsDir() && info.Name() == "node_modules" {
 			return filepath.SkipDir
 		}
-		if info.IsDir() || info.Name() == "bun.lockb" || info.Name() == "pnpm-lock.yaml" {
+		if info.IsDir() || info.Name() == "bun.lockb" || info.Name() == "bun.lock" || info.Name() == "pnpm-lock.yaml" {
 			return nil
 		}
 		content, err := afero.ReadFile(fs, path)
